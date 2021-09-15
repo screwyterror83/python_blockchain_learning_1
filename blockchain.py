@@ -1,7 +1,7 @@
 #!"D:\Program Files\CodeLanguage\Python\Python37\python.exe"
 
 # Init empty blockchain list
-blockchain = []
+
 open_transactions = []
 owner = '48962189089408906504189460489'
 genesis_block = {
@@ -9,6 +9,7 @@ genesis_block = {
     'index': 0,
     'transactions':[]
 }
+blockchain = [genesis_block]
 
 def get_last_blockchain_value():
     """ Return the last value of the current blockchain. """
@@ -40,6 +41,12 @@ def add_transaction(recipient, sender=owner, amount=1.0):
     
 def mine_block():
     last_block = blockchain[-1]
+    hashed_block = ''
+    for keys in last_block:
+        value = last_block[keys]
+        hashed_block = hashed_block + str(value)
+    print(hashed_block)
+        
     block = {
         'previous_hash': 'XYZ',
         'index': len(blockchain),
@@ -93,9 +100,10 @@ waiting_for_input = True
 while waiting_for_input:
     print('Please choose: ')
     print('1: Add a new transaction value.')
-    print('2: Output the blockchain blocks')
-    print('h: Manipulate the chain')
-    print('q: Quit')
+    print('2: Mine a new block.')
+    print('3: Output the blockchain blocks.')
+    print('h: Manipulate the chain.')
+    print('q: Quit~!')
     user_choice = get_user_choice()
     if user_choice == '1':
         tx_data = get_transaction_value()
@@ -104,6 +112,8 @@ while waiting_for_input:
         add_transaction(recipient, amount=amount)
         print(open_transactions)
     elif user_choice == '2':
+        mine_block()
+    elif user_choice == '3':
         print_blockchain_elements()
         print('Done!')
     elif user_choice == 'h':
@@ -113,10 +123,10 @@ while waiting_for_input:
         waiting_for_input = False
     else:
         print('Invalid input, please choose again. ')
-    if not chain_validate():
-        print_blockchain_elements()
-        print('Invalid Blockchain~!')
-        break
+    # if not chain_validate():
+    #     print_blockchain_elements()
+    #     print('Invalid Blockchain~!')
+    #     break
 else: 
     print('User left~!')   
     
