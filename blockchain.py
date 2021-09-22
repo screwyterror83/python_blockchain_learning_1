@@ -1,6 +1,8 @@
 #!"D:\Program Files\CodeLanguage\Python\Python37\python.exe"
 
 import functools
+import hashlib
+import json
 
 # Init empty blockchain list
 
@@ -19,7 +21,8 @@ blockchain = [genesis_block]
 participants = set() 
 
 def hash_block(block):
-    return '-'.join([str([block[key]]) for key in block])
+    # Use hashlib sha265 and json package to hash the block as string, and transcode to utf-8 and output to readable charactors instead of binary numbers
+    return hashlib.sha256(json.dumps(block).encode()).hexdigest()
 
 
 # Check whether participant has balance in his(her) account to send
@@ -38,7 +41,7 @@ def get_balance(participant):
     tx_sender.append(open_tx_sender)
     
     # use reduce and lambda function to calculate the amount to a single output(total amount)
-    amount_sent = functools.reduce(lambda tx_sum, tx_amt: tx_sum + tx_amt[0] if len(tx_amt) > 0 else 0, tx_sender, 0)
+    amount_sent = functools.reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0, tx_sender, 0)
     
     ### Replaced below code with reduce/lambda function above.
     # amount_sent = 0
@@ -49,7 +52,7 @@ def get_balance(participant):
     
     tx_recipient = [[tx['amount']for tx in block['transactions'] if tx['recipient'] == participant] for block in blockchain]
     
-    amount_received = functools.reduce(lambda tx_sum, tx_amt: tx_sum + tx_amt[0] if len(tx_amt) > 0 else 0, tx_recipient, 0)
+    amount_received = functools.reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0, tx_recipient, 0)
     
     
     return amount_received - amount_sent
@@ -100,9 +103,11 @@ def add_transaction(recipient, sender=owner, amount=1.0):
     
 # mine(verify) the block on blockchain    
 def mine_block():
+    # fetch the currently last blocks of the blockchain
     last_block = blockchain[-1]
+    # Hash the last block 
     hashed_block = hash_block(last_block)
-
+    print(hashed_block)
     #How miner gets reward by mining
     reward_transaction = {
         'sender':'MINING',
