@@ -24,6 +24,24 @@ blockchain = [genesis_block]
 participants = {'Alpha'} 
 
 
+def load_data():
+    with open('blockchain.txt', mode='r') as f:
+        file_content = f.readlines()
+        global blockchain
+        global open_transactions
+        blockchain = file_content[0]
+        open_transactions = file_content[1]
+
+load_data()
+
+# Save blockchain data to local file (1)
+def save_data():
+    with open('blockchain.txt', mode='w') as f:
+        f.write(str(blockchain))
+        f.write('\n')
+        f.write(str(open_transactions))
+        
+
 def valid_proof(transactions, last_hash, proof):
     guess = (str(transactions) + str(last_hash) + str(proof)).encode()
     guess_hash = hash_string_256(guess)
@@ -51,7 +69,7 @@ def get_balance(participant):
     # complex(nested) list comprehension
     # identify the block in the blockchain, where within the block, the transaction sender is function input argument 'participant'
     
-    tx_sender = [[tx['amount']for tx in block['transactions'] if tx['sender'] == participant] for block in blockchain]
+    tx_sender = [[tx['amount'] for tx in block['transactions'] if tx['sender'] == participant] for block in blockchain]
     open_tx_sender = [tx['amount'] for tx in open_transactions if tx['sender'] == participant]
     tx_sender.append(open_tx_sender)
     
@@ -115,6 +133,7 @@ def add_transaction(recipient, sender=owner, amount=1.0):
         # add participant of each transaction to participants set
         participants.add(sender)
         participants.add(recipient)
+        save_data()
         return True
     return False    
     
@@ -128,7 +147,9 @@ def mine_block():
     proof = proof_of_work()
     #How miner gets reward by mining
     # Using OrderedDict instead of regular dict
-    reward_transaction = ([('sender','MINING'),('recipient',owner), ('amount', MINING_REWARD)])
+    reward_transaction = OrderedDict(
+        [('sender','MINING'),('recipient',owner),('amount', MINING_REWARD)]
+        )
     
     # reward_transaction = {
     #     'sender':'MINING',
@@ -146,6 +167,7 @@ def mine_block():
         'proof': proof
         }
     blockchain.append(block)
+    save_data()
     # use boolean to reset open_transaction
     return True
 
