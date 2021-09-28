@@ -10,78 +10,91 @@ import pickle
 
 MINING_REWARD = 10
 
-open_transactions = []
 owner = 'Alpha'
-genesis_block = {
-    'previous_hash': '',
-    'index': 0,
-    'transactions':[],
-    'proof': 100
-}
 
-blockchain = [genesis_block]
+# Init empty blockchain
+blockchain = []
+# Init empty blockchain list
+open_transactions = []
 
 # using a set to create and manage list of participants of the blockchain
 participants = {'Alpha'} 
 
 
 def load_data():
-    # Using pickle to read previously stored pickle data
-    # with open('blockchain.p', mode='rb') as f:
-    #     file_content = pickle.loads(f.read())
-    #     global blockchain
-    #     global open_transactions
-    #     blockchain = file_content['chain']
-    #     open_transactions = file_content['open_transactions']
-    
-    # using json lib, load stored json file format
-    with open('blockchain.txt', mode='r') as f:
-        file_content = f.readlines()
-        global blockchain
-        global open_transactions
-        # Use json.load method to convert json format string back to python objects
-        blockchain = json.loads(file_content[0][:-1])
-        updated_blockchain = []
-        for block in blockchain:
-            updated_block = {
-                'previous_hash':block['previous_hash'],
-                'index':block['index'],
-                'proof':block['proof'],
-                'transactions':[OrderedDict([('sender', tx['sender']), ('recipient', tx['recipient']), ('amount', tx['amount'])]) for tx in block['transactions'] ]
+    global blockchain
+    global open_transactions
+    try:
+        # Using pickle to read previously stored pickle data
+        # with open('blockchain.p', mode='rb') as f:
+        #     file_content = pickle.loads(f.read())
+        #     blockchain = file_content['chain']
+        #     open_transactions = file_content['open_transactions']
+        
+        # using json lib, load stored json file format
+        with open('blockchain.txt', mode='r') as f:
+            file_content = f.readlines()
+            
+            # Use json.load method to convert json format string back to python objects
+            blockchain = json.loads(file_content[0][:-1])
+            updated_blockchain = []
+            for block in blockchain:
+                updated_block = {
+                    'previous_hash':block['previous_hash'],
+                    'index':block['index'],
+                    'proof':block['proof'],
+                    'transactions':[OrderedDict([('sender', tx['sender']), ('recipient', tx['recipient']), ('amount', tx['amount'])]) for tx in block['transactions'] ]
+                }
+                updated_blockchain.append(updated_block)
+            blockchain = updated_blockchain
+            open_transactions = json.loads(file_content[1])
+            updated_transactions = []
+            for tx in open_transactions:
+                updated_transaction = OrderedDict([('sender', tx['sender']), ('recipient', tx['recipient']), ('amount', tx['amount'])])
+                updated_transactions.append(updated_transaction)
+            open_transactions = updated_transactions
+    except IOError:
+        # Mock initial block for the blockchain
+        genesis_block = {
+            'previous_hash': '',
+            'index': 0,
+            'transactions':[],
+            'proof': 100
             }
-            updated_blockchain.append(updated_block)
-        blockchain = updated_blockchain
-        open_transactions = json.loads(file_content[1])
-        updated_transactions = []
-        for tx in open_transactions:
-            updated_transaction = OrderedDict([('sender', tx['sender']), ('recipient', tx['recipient']), ('amount', tx['amount'])])
-            updated_transactions.append(updated_transaction)
-        open_transactions = updated_transactions
+        # Initialize blockchain with genesis block
+        blockchain = [genesis_block]
+        # Init empty blockchain list
+        open_transactions = []
+    finally:
+        print('Cleanup~!')
+            
             
 load_data()
 
 # Save blockchain data to local file (1)
 
 def save_data():
-    # Using Pickle to store to local file
-    # with open('blockchain.p', mode='wb') as f:
-    #     save_data = {
-    #         'chain': blockchain,
-    #         'open_transactions':open_transactions
-    #     }
-    #     f.write(pickle.dumps(save_data))
-    
-    # using json lib, write to json format
-    with open('blockchain.txt', mode='w') as f:
-        f.write(json.dumps(blockchain))
-        f.write('\n')
-        f.write(json.dumps(open_transactions))
-
-    # use regular file write to store content(no longer working)
-        # f.write(str(blockchain))
-        # f.write('\n')
-        # f.write(str(open_transactions))
+    try:
+        # Using Pickle to store to local file
+        # with open('blockchain.p', mode='wb') as f:
+        #     save_data = {
+        #         'chain': blockchain,
+        #         'open_transactions':open_transactions
+        #     }
+        #     f.write(pickle.dumps(save_data))
         
+        # using json lib, write to json format
+        with open('blockchain.txt', mode='w') as f:
+            f.write(json.dumps(blockchain))
+            f.write('\n')
+            f.write(json.dumps(open_transactions))
+
+        # use regular file write to store content(no longer working)
+            # f.write(str(blockchain))
+            # f.write('\n')
+            # f.write(str(open_transactions))
+    except IOError:
+        print('Saving Failed ~!')   
 
 def valid_proof(transactions, last_hash, proof):
     guess = (str(transactions) + str(last_hash) + str(proof)).encode()
