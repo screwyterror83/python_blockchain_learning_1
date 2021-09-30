@@ -1,5 +1,3 @@
-#!"D:\Program Files\CodeLanguage\Python\Python37\python.exe"
-
 from functools import reduce
 from hash_util import hash_string_256, hash_block
 import json
@@ -18,8 +16,8 @@ blockchain = []
 # Init empty blockchain list
 open_transactions = []
 
-# using a set to create and manage list of participants of the blockchain
-participants = {'Alpha'} 
+
+
 
 
 def load_data():
@@ -302,8 +300,7 @@ while waiting_for_input:
     print('1: Add a new transaction value.')
     print('2: Mine a new block.')
     print('3: Output the blockchain blocks.')
-    print('4: Output participants')
-    print('5: Check transaction validity')
+    print('4: Check transaction validity')
     print('q: Quit~!')
     user_choice = get_user_choice()
     if user_choice == '1':
@@ -323,8 +320,6 @@ while waiting_for_input:
         print_blockchain_elements()
         print('Done!')
     elif user_choice == '4':
-        print(participants)
-    elif user_choice == '5':
         if verify_transactions:
             print('All transactions are valid ~!')
         else:
