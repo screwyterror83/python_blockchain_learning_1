@@ -37,8 +37,12 @@ class Node:
     def print_blockchain_elements(self):
         """Print all blocks of the blockchain."""
         # Output the blockchain list to the console
-        for block in self.blockchain.chain():
-            print("Outputting Block")
+        print('\n')
+        print('Outputting Blocks')
+        print('\n')
+        print('-' * 20)
+        print('\n')
+        for block in self.blockchain.chain:
             print(block)
         else:
             print('-' * 20)
