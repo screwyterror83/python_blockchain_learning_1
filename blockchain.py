@@ -4,6 +4,7 @@ import json
 from block import Block
 from transaction import Transaction
 from utility.verification import Verification
+from wallet import Wallet
 
 
 MINING_REWARD = 10
@@ -45,7 +46,7 @@ class Blockchain:
                 updated_blockchain = []
                 for block in blockchain:
                     # Using transaction class object to store transaction instead of using dictionary
-                    converted_tx = [Transaction(tx['sender'], tx['recipient'], tx['amount']) for tx in block['transactions']]
+                    converted_tx = [Transaction(tx['sender'], tx['recipient'], tx['signature'], tx['amount']) for tx in block['transactions']]
                     # converted_tx = [OrderedDict([('sender', tx['sender']), ('recipient', tx['recipient']), ('amount', tx['amount'])]) for tx in block['transactions'] ]
                     updated_block = Block(block['index'], block['previous_hash'],converted_tx, block['proof'], block['timestamp'])
                     # Replacing dictionary by class object
@@ -61,7 +62,7 @@ class Blockchain:
                 updated_transactions = []
                 for tx in open_transactions:
                     # Also use Transaction class object to store updated_transactions
-                    updated_transaction = Transaction(tx['sender'], tx['recipient'],tx['amount'])
+                    updated_transaction = Transaction(tx['sender'], tx['recipient'], tx['signature'],tx['amount'])
                     # updated_transaction = OrderedDict([('sender', tx['sender']), ('recipient', tx['recipient']), ('amount', tx['amount'])])
                     updated_transactions.append(updated_transaction)
                 self.__open_transactions = updated_transactions
@@ -150,7 +151,7 @@ class Blockchain:
 
 
     # add transaction to block
-    def add_transaction(self, recipient, sender, amount=1.0):
+    def add_transaction(self, recipient, sender, signature, amount=1.0):
         """
         Append a new value as well as the last blockchain value to the blockchain.
         
@@ -161,7 +162,7 @@ class Blockchain:
         """
         
         # Use class object to replace the OrderedDict
-        transaction = Transaction(sender, recipient, amount)
+        
         # Using OrderedDict to make sure the dictionary is in order, OrderedDict takes in list, and in the list use tuple for key-value pair.
         # transaction = OrderedDict([('sender', sender), ('recipient', recipient), ('amount', amount)])
         
@@ -170,15 +171,27 @@ class Blockchain:
         #     'recipient': recipient,
         #     'amount': amount
         #     }
+        if self.hosting_node == None:
+            print('Got no wallet ? ')
+            return False
+        transaction = Transaction(sender, recipient, signature, amount)
         if Verification.validate_transaction(transaction, self.get_balance):    
             self.__open_transactions.append(transaction)
             self.save_data()
             return True
+        print('Invalid Transaction')
         return False    
         
     # mine(verify) the block on blockchain  
 
     def mine_block(self):
+        """Create a new block and add open transaction to it with mining reward.
+
+        Returns:
+            bool: if True, reward is provided, if false, mining not successful.
+        """        
+        if self.hosting_node == None:
+            return False
         # fetch the currently last blocks of the blockchain
         last_block = self.__chain[-1]
         # Hash the last block 
@@ -186,11 +199,15 @@ class Blockchain:
         proof = self.proof_of_work()
         #How miner gets reward by mining
         # Use class object to replace the orderedDict
-        reward_transaction = Transaction('MINING', self.hosting_node, MINING_REWARD)
-        
+        reward_transaction = Transaction('MINING', self.hosting_node,' ', MINING_REWARD)
         copied_transactions = self.__open_transactions[:]
+        for tx in copied_transactions:
+            if not Wallet.verify_transaction(tx):
+                return False
+        
         copied_transactions.append(reward_transaction)
         block = Block(len(self.__chain), hashed_block, copied_transactions, proof)
+
         
         # Replacing genesis block dictionary using class object
         # block = {
