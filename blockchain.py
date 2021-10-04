@@ -114,7 +114,8 @@ class Blockchain:
         get each participants balance from the blockchain
         
         """
-        
+        if self.hosting_node == None:
+            return None
         # complex(nested) list comprehension
         participant = self.hosting_node
         tx_sender = [[tx.amount for tx in block.transactions if tx.sender == participant] for block in self.__chain]
@@ -151,7 +152,7 @@ class Blockchain:
 
 
     # add transaction to block
-    def add_transaction(self, recipient, sender, signature, amount=1.0):
+    def add_transaction(self, recipient, sender, signature, amount):
         """
         Append a new value as well as the last blockchain value to the blockchain.
         
@@ -191,7 +192,7 @@ class Blockchain:
             bool: if True, reward is provided, if false, mining not successful.
         """        
         if self.hosting_node == None:
-            return False
+            return None
         # fetch the currently last blocks of the blockchain
         last_block = self.__chain[-1]
         # Hash the last block 
@@ -203,7 +204,7 @@ class Blockchain:
         copied_transactions = self.__open_transactions[:]
         for tx in copied_transactions:
             if not Wallet.verify_transaction(tx):
-                return False
+                return None
         
         copied_transactions.append(reward_transaction)
         block = Block(len(self.__chain), hashed_block, copied_transactions, proof)
@@ -220,7 +221,7 @@ class Blockchain:
         self.__open_transactions = []
         self.save_data()
         # use boolean to reset open_transaction
-        return True
+        return block
 
 
 
