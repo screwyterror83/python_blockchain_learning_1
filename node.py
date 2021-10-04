@@ -6,8 +6,6 @@ from blockchain import Blockchain
 
 
 app = Flask(__name__)
-wallet = Wallet()
-blockchain = Blockchain(wallet.public_key)
 CORS(app)
 
 @app.route('/', methods=['GET'])
@@ -19,7 +17,7 @@ def create_keys():
     wallet.create_keys()
     if wallet.save_keys():
         global blockchain
-        blockchain = Blockchain(wallet.public_key)
+        blockchain = Blockchain(wallet.public_key, port)
         response = {
             'public_key': wallet.public_key,
             'private_key': wallet.private_key,
@@ -37,7 +35,7 @@ def create_keys():
 def load_keys():
     if wallet.load_keys():
         global blockchain
-        blockchain = Blockchain(wallet.public_key)
+        blockchain = Blockchain(wallet.public_key, port)
         response = {
             'public_key': wallet.public_key,
             'private_key': wallet.private_key,
@@ -151,7 +149,56 @@ def get_chain():
     return jsonify(dict_chain), 200
 
 
+@app.route('/node', methods=['POST'])
+def add_node():
+    value = request.get_json()
+    if not value:
+        response = {
+            'message': 'No data attached .'
+        }
+        return jsonify(response), 400
+    if 'node' not in value:
+        response = {
+            'message': 'No node found .'
+        }
+        return jsonify(response), 400
+    node = value['node']
+    blockchain.add_peer_node(node)
+    response = {
+        'message': 'Node added successfully. ',
+        'all_nodes': blockchain.get_peer_nodes()
+    }
+    return jsonify(response), 201
 
+@app.route('/node/<node_url>', methods=['DELETE'])
+def remove_node(node_url):
+    if node_url == '' or node_url == None:
+        response = {
+            'message':'No node found. '
+        }
+        return jsonify(response), 400
+    blockchain.remove_peer_node(node_url)
+    response = {
+        'message':'Node removed. ',
+        'all_nodes': blockchain.get_peer_nodes()
+    }
+    return jsonify(response), 200
+
+@app.route('/nodes', methods=['GET'])
+def get_nodes():
+    nodes = blockchain.get_peer_nodes()
+    response = {
+        'message':nodes
+    }
+    return jsonify(response),200
 
 if __name__ == '__main__':
-    app.run(host='localhost', port=5000)
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+    parser.add_argument('-p', '--port', type=int, default=5000)
+    args = parser.parse_args()
+    port = args.port
+    wallet = Wallet(port)
+    blockchain = Blockchain(wallet.public_key, port)
+    app.run(host='localhost', port=port)
+    

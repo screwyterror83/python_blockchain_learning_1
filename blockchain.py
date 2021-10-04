@@ -9,14 +9,16 @@ from wallet import Wallet
 
 MINING_REWARD = 10
 class Blockchain:
-    def __init__(self, hosting_node_id):
+    def __init__(self, wallet_pub_key, node_id):
         genesis_block = Block(0, '', [], 100, 0)
         # Init empty blockchain list
         self.chain = [genesis_block]
         # Unhandled transactions
         self.__open_transactions = []
+        self.wallet_pub_key = wallet_pub_key
+        self.__peer_nodes = set()
+        self.node_id = node_id
         self.load_data()
-        self.hosting_node = hosting_node_id
 
     @property
     def chain(self):
@@ -38,7 +40,7 @@ class Blockchain:
             #     open_transactions = file_content['open_transactions']
             
             # using json lib, load stored json file format
-            with open('blockchain.txt', mode='r') as f:
+            with open('blockchain-{}.txt'.format(self.node_id), mode='r') as f:
                 file_content = f.readlines()
                 
                 # Use json.load method to convert json format string back to python objects
@@ -58,7 +60,7 @@ class Blockchain:
                     # }
                     updated_blockchain.append(updated_block)
                 self.chain = updated_blockchain
-                open_transactions = json.loads(file_content[1])
+                open_transactions = json.loads(file_content[1][:-1])
                 updated_transactions = []
                 for tx in open_transactions:
                     # Also use Transaction class object to store updated_transactions
@@ -66,6 +68,8 @@ class Blockchain:
                     # updated_transaction = OrderedDict([('sender', tx['sender']), ('recipient', tx['recipient']), ('amount', tx['amount'])])
                     updated_transactions.append(updated_transaction)
                 self.__open_transactions = updated_transactions
+                peer_nodes = json.loads(file_content[2])
+                self.__peer_nodes = set(peer_nodes)
         except (IOError, IndexError):
             pass
         finally:
@@ -83,13 +87,15 @@ class Blockchain:
             #     f.write(pickle.dumps(save_data))
             
             # using json lib, write to json format
-            with open('blockchain.txt', mode='w') as f:
+            with open('blockchain-{}.txt'.format(self.node_id), mode='w') as f:
                 # Convert a class object into dict, and then use json dump
                 savable_chain = [block.__dict__ for block in [Block(block_el.index, block_el.previous_hash, [tx.__dict__ for tx in block_el.transactions] ,block_el.proof, block_el.timestamp) for block_el in self.__chain]]
                 f.write(json.dumps(savable_chain))
                 f.write('\n')
                 savable_tx = [tx.__dict__ for tx in self.__open_transactions]
                 f.write(json.dumps(savable_tx))
+                f.write('\n')
+                f.write(json.dumps(list(self.__peer_nodes)))
 
             # use regular file write to store content(no longer working)
                 # f.write(str(blockchain))
@@ -114,10 +120,10 @@ class Blockchain:
         get each participants balance from the blockchain
         
         """
-        if self.hosting_node == None:
+        if self.wallet_pub_key == None:
             return None
         # complex(nested) list comprehension
-        participant = self.hosting_node
+        participant = self.wallet_pub_key
         tx_sender = [[tx.amount for tx in block.transactions if tx.sender == participant] for block in self.__chain]
         open_tx_sender = [tx.amount for tx in self.__open_transactions if tx.sender == participant]
         tx_sender.append(open_tx_sender)
@@ -172,7 +178,7 @@ class Blockchain:
         #     'recipient': recipient,
         #     'amount': amount
         #     }
-        if self.hosting_node == None:
+        if self.wallet_pub_key == None:
             print('Got no wallet ? ')
             return False
         transaction = Transaction(sender, recipient, signature, amount)
@@ -191,7 +197,7 @@ class Blockchain:
         Returns:
             bool: if True, reward is provided, if false, mining not successful.
         """        
-        if self.hosting_node == None:
+        if self.wallet_pub_key == None:
             return None
         # fetch the currently last blocks of the blockchain
         last_block = self.__chain[-1]
@@ -200,7 +206,7 @@ class Blockchain:
         proof = self.proof_of_work()
         #How miner gets reward by mining
         # Use class object to replace the orderedDict
-        reward_transaction = Transaction('MINING', self.hosting_node,' ', MINING_REWARD)
+        reward_transaction = Transaction('MINING', self.wallet_pub_key,' ', MINING_REWARD)
         copied_transactions = self.__open_transactions[:]
         for tx in copied_transactions:
             if not Wallet.verify_transaction(tx):
@@ -223,5 +229,25 @@ class Blockchain:
         # use boolean to reset open_transaction
         return block
 
+    def add_peer_node(self,node):
+        """Add a new node to the peer node set.
 
+        Args:
+            :node: The node URL which should be added.
+        """
+        self.__peer_nodes.add(node)
+        self.save_data()
+        
+    
+    def remove_peer_node(self, node):
+        """Remove a node to the peer node set.
 
+        Args:
+            :node: The node URL which should be removed.
+        """
+        self.__peer_nodes.discard(node)
+
+    def get_peer_nodes(self):
+        """Return a list of all connected nodes
+        """
+        return list(self.__peer_nodes)
