@@ -10,13 +10,15 @@ class Transaction(Printable):
         :recipient: The recipient of the coins.
         :signature: The signature of the transaction.signature
         :amount: The amount of coins in transaction.
-    """    
+    """
     def __init__(self, sender, recipient, signature, amount):
         self.sender = sender
         self.recipient = recipient
         self.amount = amount
         self.signature = signature
-        
-        
+
     def to_ordered_dict(self):
-        return OrderedDict([('sender', self.sender), ('recipient', self.recipient), ('amount', self.amount)])
+        return OrderedDict([
+            ('sender', self.sender),
+            ('recipient', self.recipient),
+            ('amount', self.amount)])
