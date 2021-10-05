@@ -1,6 +1,11 @@
 # This file may be used to create an environment using:
 # $ conda create --name <env> --file <this file>
 # platform: win-64
+appdirs=1.4.4=pyhd3eb1b0_0
+astroid=2.6.6=py37haa95532_0
+attrs=21.2.0=pyhd3eb1b0_0
+autopep8=1.5.7=pyhd3eb1b0_0
+black=19.10b0=py_0
 brotlipy=0.7.0=py37h2bbff1b_1003
 ca-certificates=2021.7.5=haa95532_1
 certifi=2021.5.30=py37haa95532_0
@@ -10,24 +15,37 @@ click=8.0.1=pyhd3eb1b0_0
 colorama=0.4.4=pyhd3eb1b0_0
 cryptography=3.4.7=py37h71e12ea_0
 dataclasses=0.8=pyh6d0b6a4_7
+flake8=3.9.2=pyhd3eb1b0_0
 flask=2.0.1=pyhd3eb1b0_0
 flask-cors=3.0.10=pyhd3eb1b0_0
 idna=3.2=pyhd3eb1b0_0
 importlib-metadata=4.8.1=py37haa95532_0
+isort=5.9.3=pyhd3eb1b0_0
 itsdangerous=2.0.1=pyhd3eb1b0_0
 jinja2=3.0.1=pyhd3eb1b0_0
+lazy-object-proxy=1.6.0=py37h2bbff1b_0
 markupsafe=2.0.1=py37h2bbff1b_0
+mccabe=0.6.1=py37_1
+mypy_extensions=0.4.3=py37_0
 openssl=1.1.1l=h2bbff1b_0
+pathspec=0.7.0=py_0
 pip=21.0.1=py37haa95532_0
+pycodestyle=2.7.0=pyhd3eb1b0_0
 pycparser=2.20=py_2
 pycryptodome=3.10.1=py37h2bbff1b_0
+pyflakes=2.3.1=pyhd3eb1b0_0
+pylint=2.9.6=py37haa95532_1
 pyopenssl=20.0.1=pyhd3eb1b0_1
 pysocks=1.7.1=py37_1
 python=3.7.11=h6244533_0
+regex=2021.8.3=py37h2bbff1b_0
 requests=2.26.0=pyhd3eb1b0_0
 setuptools=58.0.4=py37haa95532_0
 six=1.16.0=pyhd3eb1b0_0
 sqlite=3.36.0=h2bbff1b_0
+toml=0.10.2=pyhd3eb1b0_0
+typed-ast=1.4.3=py37h2bbff1b_1
+typing-extensions=3.10.0.2=hd3eb1b0_0
 typing_extensions=3.10.0.2=pyh06a4308_0
 tzdata=2021a=h5d7bf9c_0
 urllib3=1.26.6=pyhd3eb1b0_1
@@ -37,4 +55,5 @@ werkzeug=2.0.1=pyhd3eb1b0_0
 wheel=0.37.0=pyhd3eb1b0_1
 win_inet_pton=1.1.0=py37haa95532_0
 wincertstore=0.2=py37haa95532_2
+wrapt=1.12.1=py37he774522_1
 zipp=3.5.0=pyhd3eb1b0_0
