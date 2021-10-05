@@ -20,6 +20,7 @@ class Blockchain:
         self.wallet_pub_key = wallet_pub_key
         self.__peer_nodes = set()
         self.node_id = node_id
+        self.resolve_conflicts = False
         self.load_data()
 
     @property
@@ -183,9 +184,9 @@ class Blockchain:
         #     'recipient': recipient,
         #     'amount': amount
         #     }
-        if self.wallet_pub_key == None:
-            print('Got no wallet ? ')
-            return False
+        # if self.wallet_pub_key == None:
+        #     print('Got no wallet ? ')
+        #     return False
         transaction = Transaction(sender, recipient, signature, amount)
         if Verification.validate_transaction(transaction, self.get_balance):    
             self.__open_transactions.append(transaction)
@@ -249,21 +250,58 @@ class Blockchain:
                 response = requests.post(url, json={'block':converted_block})
                 if response.status_code == 400 or response.status_code == 500:
                     print('Block declined, needs resolving')
-                    return False
+                if response.status_code == 409:
+                    self.resolve_conflicts = True
             except requests.exceptions.ConnectionError:
                 continue
         return block
     
     def add_block(self, block):
         transactions = [Transaction(tx['sender'], tx['recipient'], tx['signature'], tx['amount']) for tx in block['transactions']]
-        proof_is_valid = Verification.valid_proof(transactions, block['previous_hash'], block['proof'])
+        proof_is_valid = Verification.valid_proof(transactions[:-1], block['previous_hash'], block['proof'])
         hashes_match = hash_block(self.chain[-1] == block['previous_hash'])
         if not proof_is_valid or not hashes_match:
             return False
         converted_block = Block(block['index'], block['previous_hash'], transactions, block['proof'], block['timestamp'])
         self.__chain.append(converted_block)
+        stored_transactions = self.__open_transactions[:]
+        for itx in block['transactions']:
+            for opentx in stored_transactions:
+                if opentx.sender == itx['sender'] and opentx.recipient == itx['recipient'] and opentx.amount == itx['amount'] and opentx.signature == itx['signature']:
+                    try:
+                        self.__open_transactions.remove(opentx)
+                    except ValueError:
+                        print('Item was already removed')
         self.save_data()
         return True
+    
+    
+    def resolve(self):
+        winner_chain = self.chain
+        replace = False
+        for node in self.__peer_nodes:
+            url = f'http://{node}/chain'
+            try: 
+                response = requests.get(url)
+                node_chain = response.json()
+                node_chain = [Block(block['index'], block['previous_hash'], [Transaction(tx['sender'], tx['recipient'], tx['signature'],tx['amount']) for tx in block['transactions']], block['proof'], block['timestamp']) for block in node_chain]
+                node_chain_len = len(node_chain)
+                local_chain_len = len(winner_chain)
+                if node_chain_len > local_chain_len and Verification.validate_chain(node_chain):
+                    winner_chain = node_chain
+                    replace = True
+            except requests.exceptions.ConnectionError:
+                continue
+        self.resolve_conflicts = False
+        self.chain = winner_chain
+        if replace:
+            self.__open_transactions = []
+        self.save_data()
+        return replace
+
+
+
+
 
     def add_peer_node(self,node):
         """Add a new node to the peer node set.
