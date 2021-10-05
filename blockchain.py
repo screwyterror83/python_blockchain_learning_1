@@ -2,6 +2,7 @@ from functools import reduce
 from utility.hash_util import hash_string_256, hash_block
 
 import json
+import requests
 from block import Block
 from transaction import Transaction
 from utility.verification import Verification
@@ -116,15 +117,18 @@ class Blockchain:
 
 
     # Check whether participant has balance in his(her) account to send
-    def get_balance(self):
+    def get_balance(self,sender=None):
         """
         get each participants balance from the blockchain
         
         """
-        if self.wallet_pub_key == None:
-            return None
+        if sender == None:
+            if self.wallet_pub_key == None:
+                return None
         # complex(nested) list comprehension
-        participant = self.wallet_pub_key
+            participant = self.wallet_pub_key
+        else:
+            participant = sender
         tx_sender = [[tx.amount for tx in block.transactions if tx.sender == participant] for block in self.__chain]
         open_tx_sender = [tx.amount for tx in self.__open_transactions if tx.sender == participant]
         tx_sender.append(open_tx_sender)
@@ -159,7 +163,7 @@ class Blockchain:
 
 
     # add transaction to block
-    def add_transaction(self, recipient, sender, signature, amount):
+    def add_transaction(self, recipient, sender, signature, amount, is_receiving=False):
         """
         Append a new value as well as the last blockchain value to the blockchain.
         
@@ -186,8 +190,16 @@ class Blockchain:
         if Verification.validate_transaction(transaction, self.get_balance):    
             self.__open_transactions.append(transaction)
             self.save_data()
-            for node in self.__peer_nodes:
-                url = f'http://{node}/broadcast-transaction'
+            if not is_receiving:
+                for node in self.__peer_nodes:
+                    url = f'http://{node}/broadcast-transaction'
+                    try:
+                        response = requests.post(url, json={'sender':sender, 'recipient':recipient,'signature':signature, 'amount':amount})
+                        if response.status_code == 400 or response.status_code == 500:
+                            print('Transaction declined, needs resolving')
+                            return False
+                    except requests.exceptions.ConnectionError:
+                        continue
             return True
         print('Invalid Transaction')
         return False    
@@ -229,8 +241,29 @@ class Blockchain:
         self.__chain.append(block)
         self.__open_transactions = []
         self.save_data()
-        # use boolean to reset open_transaction
+        for node in self.__peer_nodes:
+            url = f'http://{node}/broadcast-block'
+            converted_block = block.__dict__.copy()
+            converted_block['transactions'] = [tx.__dict__ for tx in converted_block['transactions']]
+            try:
+                response = requests.post(url, json={'block':converted_block})
+                if response.status_code == 400 or response.status_code == 500:
+                    print('Block declined, needs resolving')
+                    return False
+            except requests.exceptions.ConnectionError:
+                continue
         return block
+    
+    def add_block(self, block):
+        transactions = [Transaction(tx['sender'], tx['recipient'], tx['signature'], tx['amount']) for tx in block['transactions']]
+        proof_is_valid = Verification.valid_proof(transactions, block['previous_hash'], block['proof'])
+        hashes_match = hash_block(self.chain[-1] == block['previous_hash'])
+        if not proof_is_valid or not hashes_match:
+            return False
+        converted_block = Block(block['index'], block['previous_hash'], transactions, block['proof'], block['timestamp'])
+        self.__chain.append(converted_block)
+        self.save_data()
+        return True
 
     def add_peer_node(self,node):
         """Add a new node to the peer node set.
