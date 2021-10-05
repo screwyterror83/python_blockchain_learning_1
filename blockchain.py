@@ -1,5 +1,6 @@
 from functools import reduce
 from utility.hash_util import hash_string_256, hash_block
+
 import json
 from block import Block
 from transaction import Transaction
@@ -185,6 +186,8 @@ class Blockchain:
         if Verification.validate_transaction(transaction, self.get_balance):    
             self.__open_transactions.append(transaction)
             self.save_data()
+            for node in self.__peer_nodes:
+                url = f'http://{node}/broadcast-transaction'
             return True
         print('Invalid Transaction')
         return False    
